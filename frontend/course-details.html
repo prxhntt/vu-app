@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course Details - Vikrant University Syllabus Portal</title>
+    <meta name="description" content="View course syllabus and materials for Vikrant University courses." />
+    <meta name="keywords" content="course syllabus, study materials, academic resources" />
+    <meta name="author" content="Vikrant University" />
+
+   
+    <link rel="icon" type="image/x-icon" href="/logo.jpeg" />
+
+    
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+   
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo" id="mobile-menu-trigger">
+                        <img src="/2855969.png" alt="Vikrant University" class="logo-image"/>
+                        <span id="logo-text">Vikrant University</span>
+                    </div>
+                </div>
+
+                <nav class="nav" id="nav">
+                    <ul class="nav-list">
+                        <li>
+                            <a href="/" class="nav-link">
+                                <i class="fas fa-home"></i> Home
+                            </a>
+                        </li>
+
+                        <li class="nav-dropdown">
+                            <span class="nav-link">
+                                <i class="fas fa-book"></i> Courses
+                            </span>
+                            <div class="dropdown-menu">
+                                <a href="/course/BTECH-CS">
+                                    <i class="fas fa-laptop-code"></i> Computer Science
+                                </a>
+                                <a href="/course/BTECH-ME">
+                                    <i class="fas fa-cogs"></i> Mechanical
+                                </a>
+                                <a href="/course/BTECH-CE">
+                                    <i class="fas fa-hard-hat"></i> Civil
+                                </a>
+                                <a href="/course/BTECH-AI">
+                                    <i class="fas fa-robot"></i> AI & ML
+                                </a>
+                                <a href="/course/BTECH-EE">
+                                    <i class="fas fa-bolt"></i> Electrical
+                                </a>
+                                <a href="/course/BTECH-EC">
+                                    <i class="fas fa-microchip"></i> Electronics
+                                </a>
+                                <a href="/course/CYBER-SECURITY">
+                                    <i class="fa-solid fa-shield-halved"></i> Cyber-Security
+                                </a>
+                            </div>
+                        </li>
+
+                  
+                        <li>
+                            <a href="/contact" class="nav-link">
+                                <i class="fas fa-phone"></i> Contact
+                            </a>
+                        </li>
+                        <li id="admin-nav" style="display: none">
+                            <a href="/admin" class="nav-link">
+                                <i class="fas fa-user"></i> Admin
+                            </a>
+                        </li>
+                        <li id="login-nav">
+                            <a href="/admin" class="nav-link">
+                                <i class="fa-solid fa-user-lock"></i> Admin Login
+                            </a>
+                        </li>
+                        <li id="logout-nav" style="display: none">
+                            <a href="#" class="nav-link" id="logout-btn">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="header-actions">
+                    <button class="theme-toggle" id="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="nav-overlay" id="nav-overlay"></div>
+
+    
+    <main class="main">
+        <div class="container">
+
+           
+            <div class="course-header">
+                <h2 id="course-title">Loading Course...</h2>
+                <p id="course-description"></p>
+            </div>
+
+            <div class="filters-row">
+                <select id="course-semester-filter">
+                    <option value="">All Semesters</option>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
+                    <option value="4">Semester 4</option>
+                    <option value="5">Semester 5</option>
+                    <option value="6">Semester 6</option>
+                    <option value="7">Semester 7</option>
+                    <option value="8">Semester 8</option>
+                </select>
+            </div>
+
+        
+            <div class="syllabus-list" id="syllabus-list">
+                <div class="loading-skeleton">
+                    <div class="syllabus-item">
+                        <div class="syllabus-header">
+                            <div class="syllabus-title">
+                                <h4>Loading...</h4>
+                                <p>Loading course materials...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+           
+            <div id="admin-controls" class="admin-controls" style="display: none">
+                <div class="admin-controls-header">
+                    <h3>Admin Controls</h3>
+                    <button id="upload-syllabus-btn" class="btn-primary">
+                        <i class="fas fa-upload"></i> Upload New Syllabus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+  
+    <div id="pdf-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="pdf-title">PDF Preview</h3>
+                <div class="modal-actions">
+                    <button id="download-pdf" class="1">
+                        <i class="fas fa-download"></i>Download
+                    </button>
+                    <button id="close-pdf" class="btn-close">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <iframe id="pdf-viewer" src="" width="100%" height="600px"></iframe>
+            </div>
+        </div>
+    </div>
+
+   
+    <div id="toast-container" class="toast-container"></div>
+
+  
+    <div id="loading" class="loading" style="display: none">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+   
+    
+
+   
+    <script src="/js/config.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/app-course.js"></script>
+
+    <script>
+      
+        document.addEventListener("DOMContentLoaded", function () {
+            const token = localStorage.getItem("adminToken");
+            const adminNav = document.getElementById("admin-nav");
+            const loginNav = document.getElementById("login-nav");
+            const logoutNav = document.getElementById("logout-nav");
+            const adminControls = document.getElementById("admin-controls");
+
+            if (token) {
+                if (adminNav) adminNav.style.display = "block";
+                if (loginNav) loginNav.style.display = "none";
+                if (logoutNav) logoutNav.style.display = "block";
+                if (adminControls) adminControls.style.display = "block";
+                
+               
+                document.getElementById('logout-btn').addEventListener('click', function() {
+                    localStorage.removeItem('adminToken');
+                    window.location.href = '/';
+                });
+            }
+
+       
+            document.getElementById('upload-syllabus-btn')?.addEventListener('click', function() {
+                window.location.href = '/admin';
+            });
+        });
+    </script>
+</body>
+</html>
