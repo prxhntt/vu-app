@@ -3,10 +3,14 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const Admin = require('../models/Admin');
 const OTP = require('../models/OTP');
-const { sendOTPEmail } = require('../services/emailService');
+// const { sendOTPEmail } = require('../services/emailService');
 const { auth } = require('../middleware/auth');
 const otpGenerator = require('otp-generator');
 const rateLimit = require('express-rate-limit');
+
+
+const path = require('path');
+const { sendOTPEmail } = require(path.join(__dirname, '..', 'services', 'emailService'));
 
 // ✅ Rate limit for forgot password
 const forgotLimiter = rateLimit({

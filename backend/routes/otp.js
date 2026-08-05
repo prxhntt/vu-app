@@ -1,12 +1,27 @@
-// 
+// // 
+// const express = require('express');
+// const router = express.Router();
+// const otpGenerator = require('otp-generator');
+// const Admin = require('../models/Admin');
+// const OTP = require('../models/OTP');
+// // const { sendOTPEmail } = require('../services/emailService');
+// const jwt = require('jsonwebtoken');
+// const rateLimit = require('express-rate-limit');
+
+// const path = require('path');
+// const { sendOTPEmail } = require(path.join(__dirname, '..', 'services', 'emailService'));
+
+
 const express = require('express');
 const router = express.Router();
 const otpGenerator = require('otp-generator');
+const path = require('path');  // ✅ ADD THIS LINE
 const Admin = require('../models/Admin');
 const OTP = require('../models/OTP');
-const { sendOTPEmail } = require('../services/emailService');
+const { sendOTPEmail } = require(path.join(__dirname, '..', 'services', 'emailService'));  // ✅ CHANGED
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+
 
 // ✅ Rate limit for OTP generation
 const otpGenerateLimiter = rateLimit({
