@@ -1,3 +1,4 @@
+// Admin Page Controller
 class AdminPage {
     constructor() {
         this.currentAdmin = null;
@@ -172,34 +173,534 @@ class AdminPage {
         this.currentAdmin = null;
         this.updateUIForLogout();
         Utils.showToast("Logged out successfully", "success");
-        this.showSection("home");
+        window.location.href = '/';
     }
 
+    // ============================================
+    // OTP LOGIN FUNCTIONS
+    // ============================================
+
+    setupOTPLogin() {
+        console.log('🔐 Setting up OTP login...');
+        
+        const loginForm = document.getElementById('login-form');
+        const otpForm = document.getElementById('otp-form');
+        const emailInput = document.getElementById('login-email');
+        const passwordInput = document.getElementById('login-password');
+        const otpInput = document.getElementById('login-otp');
+
+        if (!loginForm) {
+            console.log('❌ login-form not found');
+            return;
+        }
+
+        console.log('✅ OTP forms found');
+
+        // Step 1: Login with Email + Password -> Send OTP
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('📤 Login button clicked');
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!email || !password) {
+                Utils.showToast('Please enter email and password', 'warning');
+                return;
+            }
+
+            try {
+                const loginBtn = document.getElementById('login-btn');
+                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                loginBtn.disabled = true;
+
+                const response = await fetch('/api/otp/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                console.log('📥 Response:', data);
+
+                if (data.success) {
+                    document.getElementById('login-step-1').style.display = 'none';
+                    document.getElementById('login-step-2').style.display = 'block';
+                    document.getElementById('otp-email-display').textContent = email;
+                    
+                    if (window.adminPage && window.adminPage.startOTPTimer) {
+                        window.adminPage.startOTPTimer();
+                    }
+                    
+                    Utils.showToast('✅ OTP sent to your email! Check your inbox.', 'success');
+                } else {
+                    Utils.showToast('❌ ' + (data.message || 'Login failed'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                Utils.showToast('❌ Network error. Check server.', 'error');
+            } finally {
+                const loginBtn = document.getElementById('login-btn');
+                loginBtn.innerHTML = '<i class="fas fa-envelope"></i> Login & Send OTP';
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Step 2: Verify OTP
+        otpForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('🔑 Verify OTP clicked');
+            
+            const email = emailInput.value.trim();
+            const otp = otpInput.value.trim();
+
+            if (!otp || otp.length < 6) {
+                Utils.showToast('Please enter valid 6-digit OTP', 'warning');
+                return;
+            }
+
+            try {
+                const verifyBtn = document.getElementById('verify-otp-btn');
+                verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                verifyBtn.disabled = true;
+
+                const response = await fetch('/api/otp/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, otp })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('adminEmail', data.admin.email);
+                    localStorage.setItem('tokenTimestamp', Date.now().toString());
+                    
+                    if (api && api.setToken) {
+                        api.setToken(data.token);
+                    }
+                    
+                    if (window.adminPage) {
+                        window.adminPage.currentAdmin = data.admin;
+                        window.adminPage.showAdminDashboard();
+                    }
+                    
+                    Utils.showToast('✅ Login successful! Welcome back!', 'success');
+                    
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('admin-dashboard').style.display = 'block';
+                    
+                    setTimeout(() => {
+                        if (window.adminPage && window.adminPage.loadAdminSyllabi) {
+                            window.adminPage.loadAdminSyllabi();
+                            window.adminPage.loadAnalytics();
+                        }
+                    }, 500);
+                    
+                } else {
+                    Utils.showToast('❌ ' + (data.message || 'Invalid OTP'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                Utils.showToast('❌ Network error. Please try again.', 'error');
+            } finally {
+                const verifyBtn = document.getElementById('verify-otp-btn');
+                verifyBtn.innerHTML = '<i class="fas fa-check"></i> Verify & Login';
+                verifyBtn.disabled = false;
+            }
+        });
+
+        // Resend OTP
+        document.getElementById('resend-otp-btn')?.addEventListener('click', async function() {
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                Utils.showToast('Email is required', 'warning');
+                return;
+            }
+            
+            try {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                this.disabled = true;
+
+                const response = await fetch('/api/otp/resend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (window.adminPage && window.adminPage.startOTPTimer) {
+                        window.adminPage.startOTPTimer();
+                    }
+                    Utils.showToast('✅ New OTP sent successfully!', 'success');
+                } else {
+                    Utils.showToast('❌ ' + (data.message || 'Failed to resend'), 'error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                Utils.showToast('❌ Network error.', 'error');
+            } finally {
+                this.innerHTML = '<i class="fas fa-redo"></i> Resend OTP';
+                this.disabled = false;
+            }
+        });
+
+        // Back to login
+        document.getElementById('back-to-login-btn')?.addEventListener('click', function() {
+            document.getElementById('login-step-1').style.display = 'block';
+            document.getElementById('login-step-2').style.display = 'none';
+            
+            if (window.otpTimerInterval) {
+                clearInterval(window.otpTimerInterval);
+            }
+            
+            document.getElementById('timer-display').textContent = 'OTP expires in 5:00';
+            document.getElementById('timer-display').style.color = '';
+            document.getElementById('verify-otp-btn').disabled = false;
+            document.getElementById('login-otp').value = '';
+            
+            Utils.showToast('Back to login', 'info');
+        });
+
+        // Password toggle for OTP login
+        document.getElementById('login-password-toggle')?.addEventListener('click', function() {
+            const passwordInput = document.getElementById('login-password');
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            this.querySelector('i').className = type === 'text' ? 'fas fa-eye-slash' : 'fas fa-eye';
+        });
+    }
+
+    startOTPTimer() {
+        let timeLeft = 300;
+        const timerDisplay = document.getElementById('timer-display');
+        const verifyBtn = document.getElementById('verify-otp-btn');
+        
+        if (window.otpTimerInterval) {
+            clearInterval(window.otpTimerInterval);
+        }
+        
+        window.otpTimerInterval = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            
+            if (timerDisplay) {
+                timerDisplay.textContent = `OTP expires in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft < 60) {
+                    timerDisplay.style.color = '#dc2626';
+                    timerDisplay.style.fontWeight = 'bold';
+                }
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(window.otpTimerInterval);
+                if (timerDisplay) {
+                    timerDisplay.textContent = '⏰ OTP expired!';
+                    timerDisplay.style.color = '#dc2626';
+                }
+                if (verifyBtn) {
+                    verifyBtn.disabled = true;
+                    Utils.showToast('⏰ OTP expired. Please request new OTP.', 'warning');
+                }
+            }
+        }, 1000);
+    }
+
+    // ============================================
+    // FORGOT PASSWORD FUNCTIONS (Login Page)
+    // ============================================
+
+    setupForgotPassword() {
+        // 1️⃣ Open Forgot Password Modal
+        document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('forgot-modal').style.display = 'flex';
+            document.getElementById('forgot-step-1').style.display = 'block';
+            document.getElementById('forgot-step-2').style.display = 'none';
+            document.getElementById('forgot-email').value = '';
+            document.getElementById('forgot-timer').textContent = 'OTP expires in 5:00';
+            document.getElementById('forgot-timer').style.color = '';
+        });
+
+        // Close modal on outside click
+        document.getElementById('forgot-modal')?.addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                e.target.style.display = 'none';
+                if (window.forgotTimerInterval) {
+                    clearInterval(window.forgotTimerInterval);
+                }
+            }
+        });
+
+        // 2️⃣ Send OTP
+        document.getElementById('forgot-email-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('forgot-email').value.trim();
+            
+            if (!email) {
+                Utils.showToast('Please enter your email', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/password/forgot/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('forgot-step-1').style.display = 'none';
+                    document.getElementById('forgot-step-2').style.display = 'block';
+                    document.getElementById('forgot-email-display').textContent = email;
+                    
+                    this.startForgotTimer();
+                    Utils.showToast('✅ OTP sent to your email!', 'success');
+                } else {
+                    Utils.showToast('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                Utils.showToast('❌ Network error. Please try again.', 'error');
+            }
+        });
+
+        // 3️⃣ Reset Password with OTP
+        document.getElementById('forgot-reset-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('forgot-email').value.trim();
+            const otp = document.getElementById('forgot-otp').value.trim();
+            const newPassword = document.getElementById('forgot-new-password').value;
+            const confirmPassword = document.getElementById('forgot-confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                Utils.showToast('Passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                Utils.showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            if (!otp || otp.length < 6) {
+                Utils.showToast('Please enter valid 6-digit OTP', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/password/forgot/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otp, newPassword, confirmPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Utils.showToast('✅ Password reset successfully! Please login.', 'success');
+                    document.getElementById('forgot-modal').style.display = 'none';
+                    
+                    if (window.forgotTimerInterval) {
+                        clearInterval(window.forgotTimerInterval);
+                    }
+                } else {
+                    Utils.showToast('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                Utils.showToast('❌ Network error. Please try again.', 'error');
+            }
+        });
+
+        // 4️⃣ Resend OTP
+        document.getElementById('forgot-resend-btn')?.addEventListener('click', async () => {
+            const email = document.getElementById('forgot-email').value.trim();
+            
+            try {
+                const response = await fetch('/api/password/forgot/resend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.startForgotTimer();
+                    Utils.showToast('✅ New OTP sent!', 'success');
+                } else {
+                    Utils.showToast('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                Utils.showToast('❌ Network error. Please try again.', 'error');
+            }
+        });
+
+        // 5️⃣ Back to email step
+        document.getElementById('forgot-back-btn')?.addEventListener('click', () => {
+            document.getElementById('forgot-step-1').style.display = 'block';
+            document.getElementById('forgot-step-2').style.display = 'none';
+            if (window.forgotTimerInterval) {
+                clearInterval(window.forgotTimerInterval);
+            }
+            document.getElementById('forgot-timer').textContent = 'OTP expires in 5:00';
+            document.getElementById('forgot-timer').style.color = '';
+        });
+    }
+
+    // ✅ Forgot Password Timer
+    startForgotTimer() {
+        let timeLeft = 300;
+        const timerDisplay = document.getElementById('forgot-timer');
+        
+        if (window.forgotTimerInterval) {
+            clearInterval(window.forgotTimerInterval);
+        }
+        
+        window.forgotTimerInterval = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            
+            if (timerDisplay) {
+                timerDisplay.textContent = `OTP expires in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft < 60) {
+                    timerDisplay.style.color = '#dc2626';
+                    timerDisplay.style.fontWeight = 'bold';
+                }
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(window.forgotTimerInterval);
+                if (timerDisplay) {
+                    timerDisplay.textContent = '⏰ OTP expired!';
+                    timerDisplay.style.color = '#dc2626';
+                }
+            }
+        }, 1000);
+    }
+
+    // ============================================
+    // CHANGE PASSWORD FUNCTIONS (Admin Settings)
+    // ============================================
+
+    setupChangePassword() {
+        const changeForm = document.getElementById('change-password-form');
+        if (!changeForm) return;
+
+        changeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (newPassword !== confirmPassword) {
+                Utils.showToast('New passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                Utils.showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('adminToken');
+                const response = await fetch('/api/password/change', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ oldPassword, newPassword, confirmPassword })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Utils.showToast('✅ Password changed successfully!', 'success');
+                    changeForm.reset();
+                } else {
+                    Utils.showToast('❌ ' + data.message, 'error');
+                }
+            } catch (error) {
+                Utils.showToast('❌ Network error. Please try again.', 'error');
+            }
+        });
+    }
+
+    // ============================================
+    // TOGGLE PASSWORD VISIBILITY
+    // ============================================
+
+    togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const icon = input.parentElement.querySelector('.password-toggle i');
+        if (!icon) return;
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+
+    // ============================================
+    // SETUP EVENT LISTENERS
+    // ============================================
+
     setupEventListeners() {
+        // Mobile menu
         document.getElementById("mobile-menu-trigger")?.addEventListener("click", () => {
             this.toggleMobileMenu();
         });
 
+        // Theme toggle
         document.getElementById("theme-toggle")?.addEventListener("click", () => {
             this.toggleTheme();
         });
 
-        document.getElementById("admin-login-form")?.addEventListener("submit", (e) => {
-            e.preventDefault();
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            this.handleLogin(email, password);
-        });
-
+        // Logout
         document.getElementById("logout-btn")?.addEventListener("click", () => {
             this.handleLogout();
         });
 
+        // Password toggle for login page
         this.setupPasswordToggle();
 
+        // Nav overlay close
         document.getElementById('nav-overlay')?.addEventListener('click', () => {
             this.closeMobileMenu();
         });
+
+        // ✅ OTP Login Setup
+        this.setupOTPLogin();
+
+        // ✅ Forgot Password (Login Page)
+        this.setupForgotPassword();
+
+        // ✅ Change Password (Admin Settings)
+        this.setupChangePassword();
     }
 
     setupPasswordToggle() {
@@ -351,95 +852,104 @@ class AdminPage {
     }
 
     async handleFileUpload(e) {
-    e.preventDefault();
+        e.preventDefault();
 
-    if (!this.currentAdmin) {
-        Utils.showToast("Please log in as admin", "error");
-        return;
-    }
-
-    const courseCode = document.getElementById("upload-course").value;
-    const semester = document.getElementById("upload-semester").value;
-    const subject = document.getElementById("upload-subject").value;
-    const title = document.getElementById("upload-title").value;
-    const description = document.getElementById("upload-description").value;
-    const version = document.getElementById("upload-version").value;
-    const fileInput = document.getElementById("upload-file");
-    const file = fileInput.files[0];
-
-    if (!file) {
-        Utils.showToast("Please select a PDF file", "error");
-        return;
-    }
-
-    if (!Utils.isPDFFile(file)) {
-        Utils.showToast("Only PDF files are allowed", "error");
-        return;
-    }
-
-    const convertToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    };
-
-    try {
-        Utils.showLoading(true);
-        
-        const base64File = await convertToBase64(file);
-        
-        const uploadData = {
-            courseCode: courseCode,
-            semester: semester,
-            subject: subject,
-            title: title,
-            description: description,
-            version: version || 1,
-            fileData: base64File,
-            fileName: file.name
-        };
-
-        const response = await fetch('/api/syllabi/upload', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-            },
-            body: JSON.stringify(uploadData)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            Utils.showToast("File uploaded successfully to cloud!", "success");
-            e.target.reset();
-            
-            if (document.getElementById("manage-tab").classList.contains("active")) {
-                this.loadAdminSyllabi();
-            }
-        } else {
-            throw new Error(result.message || 'Upload failed');
+        if (!this.currentAdmin) {
+            Utils.showToast("Please log in as admin", "error");
+            return;
         }
 
-    } catch (error) {
-        Utils.showToast("Upload failed: " + error.message, "error");
-        console.error("Upload error:", error);
-    } finally {
-        Utils.showLoading(false);
+        const courseCode = document.getElementById("upload-course").value;
+        const semester = document.getElementById("upload-semester").value;
+        const subject = document.getElementById("upload-subject").value;
+        const title = document.getElementById("upload-title").value;
+        const description = document.getElementById("upload-description").value;
+        const version = document.getElementById("upload-version").value;
+        const fileInput = document.getElementById("upload-file");
+        const file = fileInput.files[0];
+
+        if (!file) {
+            Utils.showToast("Please select a PDF file", "error");
+            return;
+        }
+
+        if (!Utils.isPDFFile(file)) {
+            Utils.showToast("Only PDF files are allowed", "error");
+            return;
+        }
+
+        const convertToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        };
+
+        try {
+            Utils.showLoading(true);
+            
+            const base64File = await convertToBase64(file);
+            
+            const uploadData = {
+                courseCode: courseCode,
+                semester: semester,
+                subject: subject,
+                title: title,
+                description: description,
+                version: version || 1,
+                fileData: base64File,
+                fileName: file.name
+            };
+
+            const response = await fetch('/api/syllabi/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                },
+                body: JSON.stringify(uploadData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Utils.showToast("File uploaded successfully!", "success");
+                e.target.reset();
+                
+                if (document.getElementById("manage-tab").classList.contains("active")) {
+                    this.loadAdminSyllabi();
+                }
+            } else {
+                throw new Error(result.message || 'Upload failed');
+            }
+
+        } catch (error) {
+            Utils.showToast("Upload failed: " + error.message, "error");
+            console.error("Upload error:", error);
+        } finally {
+            Utils.showLoading(false);
+        }
     }
-}
 
     async loadAdminSyllabi() {
         try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                console.log('⚠️ No token found');
+                return false;
+            }
+            
+            console.log('📚 Loading admin syllabi...');
             const syllabi = await api.getAdminSyllabi();
             this.allSyllabi = syllabi;
             this.displayAdminSyllabi(syllabi);
+            console.log('✅ Admin syllabi loaded:', syllabi.length);
+            return true;
         } catch (error) {
-            Utils.showToast('Failed to load admin syllabi', 'error');
-            console.error('Error loading admin syllabi:', error);
+            console.error('❌ Error loading admin syllabi:', error);
+            return false;
         }
     }
 
@@ -574,6 +1084,28 @@ class AdminPage {
     }
 }
 
+// ✅ Global togglePassword function for all password fields
+window.togglePassword = function(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const icon = input.parentElement.querySelector('.password-toggle i');
+    if (!icon) return;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+};
+
+// Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
     window.adminPage = new AdminPage();
 });
+
+// Export for Node.js
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = AdminPage;
+}

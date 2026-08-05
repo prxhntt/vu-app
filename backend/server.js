@@ -52,14 +52,20 @@ app.get('/course/:courseCode', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/course-details.html'));
 });
 
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth'));// ✅ ADD THIS LINE
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/syllabi', require('./routes/syllabi'));
 app.use('/api/admins', require('./routes/admins'));
+app.use('/api/otp', require('./routes/otp'));
+app.use('/api/password', require('./routes/password'));
 app.use('/api/search', require('./routes/search'));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/home.html'));
+});
+
+app.get('/forgot-password.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/forgot-password.html'));
 });
 
 app.use((err, req, res, next) => {
@@ -70,7 +76,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://Prxhntt:<db_password>@cluster0.pbsnvwz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://Prxhntt:Prxhntt@cluster0.pbsnvwz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',  {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })

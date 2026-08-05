@@ -1,11 +1,19 @@
-
+// API service for communicating with backend
 class ApiService {
     constructor() {
         this.baseURL = '/api';
         this.token = localStorage.getItem('adminToken');
     }
 
- 
+    // Get token from localStorage
+    getToken() {
+        if (!this.token) {
+            this.token = localStorage.getItem('adminToken');
+        }
+        return this.token;
+    }
+
+    // Set authentication token
     setToken(token) {
         this.token = token;
         if (token) {
@@ -15,7 +23,7 @@ class ApiService {
         }
     }
 
-
+    // Generic request method
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
         const config = {
@@ -26,9 +34,10 @@ class ApiService {
             ...options
         };
 
-     
-        if (this.token && !config.headers.Authorization) {
-            config.headers.Authorization = `Bearer ${this.token}`;
+        // ✅ FIX: Always get token from localStorage
+        const token = this.getToken();
+        if (token && !config.headers.Authorization) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
 
         try {
@@ -46,7 +55,7 @@ class ApiService {
         }
     }
 
-
+    // Authentication endpoints
     async login(email, password) {
         return this.request('/auth/login', {
             method: 'POST',
@@ -58,6 +67,7 @@ class ApiService {
         return this.request('/auth/verify');
     }
 
+    // Course endpoints
     async getCourses() {
         return this.request('/courses');
     }
@@ -71,7 +81,7 @@ class ApiService {
         return this.request(`/courses/${code}/syllabi${params}`);
     }
 
-
+    // Syllabus endpoints
     async getSyllabi(filters = {}) {
         const params = new URLSearchParams(filters).toString();
         return this.request(`/syllabi?${params}`);
@@ -85,7 +95,7 @@ class ApiService {
         return this.request(`/syllabi/${courseCode}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.token}`
+                'Authorization': `Bearer ${this.getToken()}`
             },
             body: formData
         });
@@ -105,13 +115,13 @@ class ApiService {
         return `${this.baseURL}/syllabi/${id}/download`;
     }
 
-
+    // Search endpoint
     async search(query, filters = {}) {
         const params = new URLSearchParams({ q: query, ...filters }).toString();
         return this.request(`/search?${params}`);
     }
 
-
+    // Admin endpoints
     async getAdminSyllabi() {
         return this.request('/admins/syllabi');
     }
@@ -145,16 +155,25 @@ class ApiService {
             });
 
             xhr.open('POST', `${this.baseURL}/syllabi/${courseCode}`);
-            xhr.setRequestHeader('Authorization', `Bearer ${this.token}`);
+            xhr.setRequestHeader('Authorization', `Bearer ${this.getToken()}`);
             xhr.send(formData);
         });
     }
 }
 
-
+// Create global API instance
 const api = new ApiService();
 
+// ✅ Fix: Window load par token set karo
+document.addEventListener('DOMContentLoaded', function() {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+        api.setToken(token);
+        console.log('✅ API token set on page load');
+    }
+});
 
+// Export for Node.js environment
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { ApiService, api };
 }
