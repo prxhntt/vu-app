@@ -4,7 +4,7 @@ const router = express.Router();
 const otpGenerator = require('otp-generator');
 const Admin = require('../models/Admin');
 const OTP = require('../models/OTP');
-const { sendOTPEmail } = require('../services/emailService');
+const { sendOTPEmail } = require('../services/emailservice');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 
