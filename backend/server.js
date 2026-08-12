@@ -40,8 +40,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/home.html'));
 });
 
-app.get('/contact', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/contact.html'));
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/about.html'));
 });
 
 app.get('/admin', (req, res) => {
@@ -59,6 +59,7 @@ app.use('/api/admins', require('./routes/admins'));
 app.use('/api/otp', require('./routes/otp'));
 app.use('/api/password', require('./routes/password'));
 app.use('/api/search', require('./routes/search'));
+app.use('/api/timetable', require('./routes/timetable'));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/home.html'));

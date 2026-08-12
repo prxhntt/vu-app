@@ -1,16 +1,19 @@
-// 
+// ============================================
+// AUTH ROUTE - WITH LOGIN NOTIFICATION
+// ============================================
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const rateLimit = require('express-rate-limit');
 
+
 const router = express.Router();
 
 // ✅ Rate limiting for login
 const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // 5 attempts per 15 minutes
+    windowMs: 15 * 60 * 1000,
+    max: 5,
     message: 'Too many login attempts. Please try after 15 minutes.'
 });
 
@@ -28,7 +31,6 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // ✅ Find admin
         const admin = await Admin.findOne({ email, isActive: true });
         if (!admin) {
             return res.status(401).json({ 
@@ -37,7 +39,6 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // ✅ Check if account is locked
         if (admin.lockUntil && admin.lockUntil > Date.now()) {
             const waitTime = Math.ceil((admin.lockUntil - Date.now()) / 60000);
             return res.status(423).json({
@@ -46,20 +47,17 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // ✅ Check password with hash
         const isMatch = await admin.comparePassword(password);
         
         if (!isMatch) {
-            // ✅ Increment failed attempts
             admin.loginAttempts = (admin.loginAttempts || 0) + 1;
             
-            // ✅ Lock after 5 failed attempts
             if (admin.loginAttempts >= 5) {
-                admin.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+                admin.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
                 await admin.save();
                 return res.status(423).json({
                     success: false,
-                    message: 'Account locked for 30 minutes due to multiple failed attempts'
+                    message: 'Account locked for 30 minutes'
                 });
             }
             
@@ -70,22 +68,22 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // ✅ Reset login attempts on success
         admin.loginAttempts = 0;
         admin.lockUntil = null;
         await admin.save();
 
-        // ✅ Generate JWT with shorter expiry
         const token = jwt.sign(
-            { 
-                id: admin._id, 
-                email: admin.email, 
-                role: admin.role 
-            },
+            { id: admin._id, email: admin.email, role: admin.role },
             process.env.JWT_SECRET || 'fallback-secret',
-            { expiresIn: '2h' } // ✅ 2 hours (secure)
+            { expiresIn: '2h' }
         );
 
+        // ============================================
+        // ✅ SEND LOGIN NOTIFICATION - WITH LOGS
+       
+        // ============================================
+        // ✅ SUCCESS RESPONSE
+        // ============================================
         res.json({
             success: true,
             token,

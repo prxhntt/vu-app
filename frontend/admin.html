@@ -33,7 +33,7 @@
           <div class="logo-section">
             <div class="logo" id="mobile-menu-trigger">
               <img
-                src="2855969.png"
+                src="logo.jpeg"
                 alt="Vikrant University"
                 class="logo-image"
               />
@@ -77,9 +77,10 @@
                   </a>
                 </div>
               </li>
+              <li><a href="/timetable.html" class="nav-link"><i class="fas fa-calendar-alt"></i> Timetable</a></li>
 
               <li>
-                <a href="/contact" class="nav-link">
+                <a href="/about" class="nav-link">
                   <i class="fas fa-info-circle"></i> About Us
                 </a>
               </li>
@@ -88,8 +89,8 @@
                   <i class="fas fa-user"></i> Admin
                 </a>
               </li>
-              <li id="login-nav" style="display: none">
-                <a href="/admin" class="nav-link">
+              <li id="login-nav">
+                <a href="/admin" class="nav-link active">
                   <i class="fa-solid fa-user-lock"></i> Admin Login
                 </a>
               </li>
@@ -101,9 +102,7 @@
             </ul>
           </nav>
 
-          <div class="header-actions">
-           
-          </div>
+          <div class="header-actions"></div>
         </div>
       </div>
     </header>
@@ -245,9 +244,13 @@
               <button class="admin-tab-btn active" data-tab="upload">
                 Upload Syllabus
               </button>
+              <button class="admin-tab-btn" data-tab="timetable">
+                📅 Timetable
+              </button>
               <button class="admin-tab-btn" data-tab="manage">
                 Manage Files
               </button>
+
               <button class="admin-tab-btn" data-tab="analytics">
                 Analytics
               </button>
@@ -324,6 +327,74 @@
                     <i class="fas fa-upload"></i> Upload Syllabus
                   </button>
                 </form>
+              </div>
+
+              <div id="timetable-tab" class="admin-tab">
+                <h3>📅 Manage Timetable</h3>
+                <form id="timetable-form" onsubmit="return false;">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Branch *</label>
+                      <select id="tt-branch" required>
+                        <option value="">Select</option>
+                        <option value="cs">Computer Science (CSE)</option>
+                        <option value="ai">Artificial Intelligence & ML</option>
+                        <option value="cyber">Cyber Security</option>
+                        <option value="me">Mechanical Engineering</option>
+                        <option value="ce">Civil Engineering</option>
+                        <option value="ee">Electrical Engineering</option>
+                        <option value="ec">Electronics & Communication</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Branch Name *</label>
+                      <input
+                        type="text"
+                        id="tt-branchname"
+                        required
+                        placeholder="e.g., Computer Science"
+                      />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Semester *</label>
+                      <select id="tt-semester" required>
+                        <option value="">Select</option>
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                        <option value="3">Semester 3</option>
+                        <option value="4">Semester 4</option>
+                        <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Upload Timetable Image *</label>
+                      <input
+                        type="file"
+                        id="tt-image-file"
+                        accept="image/*"
+                        required
+                      />
+                      <div
+                        id="tt-image-preview"
+                        style="margin-top: 0.5rem"
+                      ></div>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn-primary btn-full"
+                    id="tt-submit-btn"
+                  >
+                    <i class="fas fa-upload"></i> Add Timetable
+                  </button>
+                </form>
+                <hr />
+                <div id="timetable-list"></div>
               </div>
 
               <!-- Manage Tab -->
