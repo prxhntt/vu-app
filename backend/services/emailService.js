@@ -32,8 +32,8 @@ transporter.verify(function(error, success) {
 });
 
 const sendOTPEmail = async (email, otp) => {
-    console.log('📧 Sending OTP to:', email);
-    console.log('🔑 OTP:', otp);
+   
+
 
     try {
         const mailOptions = {
@@ -53,19 +53,12 @@ const sendOTPEmail = async (email, otp) => {
             `
         };
 
-<<<<<<< HEAD
         await transporter.sendMail(mailOptions);
         console.log('✅ OTP send to email:');
-=======
-        const info = await transporter.sendMail(mailOptions);
-        console.log('✅ OTP sent to:', email);
-        console.log('📨 Message ID:', info.messageId);
->>>>>>> c5ce971a04f99d26d65f6033273937790255996f
         return true;
 
     } catch (error) {
         console.log('❌ Email error:', error.message);
-        console.log('🔑 OTP for', email, 'is:', otp);
         
         // ✅ Always return true - Login will work even if email fails
         return true;
